@@ -1,6 +1,8 @@
 CREATE TABLE people (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
+    first_name VARCHAR(100) UNIQUE NOT NULL,
+    last_name VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL
 );
 
 CREATE TABLE meetings (

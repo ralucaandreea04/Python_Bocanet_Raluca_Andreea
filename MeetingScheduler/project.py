@@ -1,4 +1,6 @@
 import psycopg2
+import tkinter as tk
+import tkinter.font as tkFont
 
 def conectare_baza_de_date():
     try:
@@ -118,4 +120,99 @@ def main():
     afisare_sedinte()
     afisare_participanti_sedinta(2)
 
-main()
+def logare(root):
+    fereastra_logare = tk.Toplevel(root)
+    fereastra_logare.title("Fereastra de Logare")
+    fereastra_logare.geometry("600x600")
+    fereastra_logare.configure(bg="#fef5e7")
+    default_font = tkFont.Font(family="Bookman Old Style", size=12)
+    root.option_add("*Font", default_font)
+
+    main_frame = tk.Frame(fereastra_logare, bg="#fef5e7")
+    main_frame.pack(expand=True, fill='both') 
+    main_frame.place(relx=0.5, rely=0.5, anchor='center')
+
+    label_logare = tk.Label(main_frame, text="Introduceti datele personale:", 
+                            font=("Bookman Old Style", 16), bg="#fef5e7")
+    label_logare.pack(pady=20)
+
+    label_prenume = tk.Label(main_frame, text="Prenume:", bg="#fef5e7",
+                             anchor='center', justify='center')
+    label_prenume.pack(pady=5)
+    entry_prenume = tk.Entry(main_frame, width=30, justify='center')
+    entry_prenume.pack(pady=5)
+
+    label_nume = tk.Label(main_frame, text="Nume:", bg="#fef5e7",
+                          anchor='center', justify='center')
+    label_nume.pack(pady=5)
+    entry_nume = tk.Entry(main_frame, width=30, justify='center')
+    entry_nume.pack(pady=5)
+
+    label_email = tk.Label(main_frame, text="Email:", bg="#fef5e7", 
+                           anchor='center', justify='center')
+    label_email.pack(pady=5)
+    entry_email = tk.Entry(main_frame, width=30, justify='center')
+    entry_email.pack(pady=5)
+
+    button_logare_secundar = tk.Button(main_frame, text="Logare", width=20)
+    button_logare_secundar.pack(pady=10)
+    button_logare_secundar.configure(bg="#f6ddcc")
+
+
+def inserare_informatii(root):
+    fereastra_inserare = tk.Toplevel(root)
+    fereastra_inserare.title("Inserare Informatii")
+    fereastra_inserare.geometry("600x600")
+    fereastra_inserare.configure(bg="#fef5e7") 
+    default_font = tkFont.Font(family="Bookman Old Style", size=12)
+    root.option_add("*Font", default_font)
+
+    main_frame = tk.Frame(fereastra_inserare, bg="#fef5e7")
+    main_frame.place(relx=0.5, rely=0.5, anchor='center')
+
+    # Eticheta de introducere informații
+    label_informatii = tk.Label(main_frame, text="Alege actiunea dorita:", 
+                                font=("Bookman Old Style", 18), bg="#fef5e7")
+    label_informatii.pack(pady=20)
+
+    button_adauga_persoana = tk.Button(main_frame, text="Adauga persoana",
+                                       bg="#f6ddcc", width=20)
+    button_adauga_persoana.pack(pady=10)
+
+    button_stabileste_sedinta = tk.Button(main_frame,
+                        text="Stabileste o sedinta", bg="#f6ddcc", width=20)
+    button_stabileste_sedinta.pack(pady=10)
+
+    button_vezi_sedinte = tk.Button(main_frame, text="Vezi sedintele", 
+                                    bg="#f6ddcc", width=20)
+    button_vezi_sedinte.pack(pady=10)
+
+def creeaza_interfata():
+    root = tk.Tk()
+    root.title("Meeting Scheduler")
+    root.geometry("600x600") 
+    root.configure(bg="#fef5e7")
+    main_frame = tk.Frame(root)
+    main_frame.pack(expand=True)
+    main_frame.configure(bg="#fef5e7")
+
+    label = tk.Label(main_frame, text="Meeting Scheduler", 
+                     font=("Bookman Old Style", 16))
+    label.pack(pady=20)
+    label.configure(bg="#fef5e7")
+
+    button_logare = tk.Button(main_frame, text="Logare", 
+                              font=("Bookman Old Style", 12), width=20, 
+                              command=lambda: logare(root))
+    button_logare.pack(pady=10)
+    button_logare.configure(bg="#f6ddcc")
+
+    button_inserare = tk.Button(main_frame, text="Inserare informatii", 
+                                font=("Bookman Old Style", 12), width=20, 
+                                command=lambda: inserare_informatii(root))
+    button_inserare.pack(pady=10)
+    button_inserare.configure(bg="#f6ddcc")
+
+    root.mainloop()
+
+creeaza_interfata()

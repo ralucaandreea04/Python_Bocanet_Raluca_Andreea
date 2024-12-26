@@ -170,7 +170,6 @@ def inserare_informatii(root):
     main_frame = tk.Frame(fereastra_inserare, bg="#fef5e7")
     main_frame.place(relx=0.5, rely=0.5, anchor='center')
 
-    # Eticheta de introducere informații
     label_informatii = tk.Label(main_frame, text="Alege actiunea dorita:", 
                                 font=("Bookman Old Style", 18), bg="#fef5e7")
     label_informatii.pack(pady=20)

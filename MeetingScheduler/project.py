@@ -2,6 +2,7 @@ import psycopg2
 import tkinter as tk
 from tkinter import ttk, messagebox
 import tkinter.font as tkFont
+from ics import Calendar
 
 def conectare_baza_de_date():
     try:
@@ -461,6 +462,171 @@ def date_sedinte(root):
     button_sedinte.pack(pady=10)
     button_sedinte.configure(bg="#f6ddcc")
 
+def export_calendar_nume(nume):
+        prenume, nume = nume.split()
+        conn = conectare_baza_de_date()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT m.start_time, m.end_time, m.description
+            FROM meetings m
+            JOIN meeting_participants mp ON m.id = mp.meeting_id
+            JOIN people p ON p.id = mp.person_id
+            WHERE p.first_name = %s AND p.last_name = %s
+            """,
+            (prenume, nume)
+        )
+        sedinte = cursor.fetchall()
+
+        filename = f"{prenume}_{nume}_calendar.ics"
+        with open(filename, "w") as f:
+            f.write("BEGIN:VCALENDAR\n")
+            f.write("PRODID:-//Meeting Scheduler//EN\n")
+            for sedinta in sedinte:
+                f.write("BEGIN:VEVENT\n")
+                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"SUMMARY:{sedinta[2]}\n")
+                f.write("END:VEVENT\n")
+            f.write("END:VCALENDAR\n")
+
+def export_calendar_data(start_date, end_date):
+        conn = conectare_baza_de_date()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT start_time, end_time, description
+            FROM meetings
+            WHERE start_time >= %s AND end_time <= %s
+            """,
+            (start_date, end_date)
+        )
+        sedinte = cursor.fetchall()
+
+        filename = f"calendar_data.ics"
+        with open(filename, "w") as f:
+            f.write("BEGIN:VCALENDAR\n")
+            f.write("PRODID:-//Meeting Scheduler//EN\n")
+            for sedinta in sedinte:
+                f.write("BEGIN:VEVENT\n")
+                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"SUMMARY:{sedinta[2]}\n")
+                f.write("END:VEVENT\n")
+            f.write("END:VCALENDAR\n")
+
+def export_sedinte():
+        conn = conectare_baza_de_date()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT start_time, end_time, description
+            FROM meetings
+            """
+        )
+        sedinte = cursor.fetchall()
+
+        filename = "sedinte.ics"
+        with open(filename, "w") as f:
+            f.write("BEGIN:VCALENDAR\n")
+            f.write("PRODID:-//Meeting Scheduler//EN\n")
+            for sedinta in sedinte:
+                f.write("BEGIN:VEVENT\n")
+                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"SUMMARY:{sedinta[2]}\n")
+                f.write("END:VEVENT\n")
+            f.write("END:VCALENDAR\n")
+
+def import_calendar(fisier):
+    conn = conectare_baza_de_date()
+    cursor = conn.cursor()
+
+    with open(fisier, 'r') as f:
+        calendar = Calendar(f.read())
+
+    for event in calendar.events:
+        start_time = event.begin.datetime.strftime("%Y-%m-%d %H:%M:%S")
+        end_time = event.end.datetime.strftime("%Y-%m-%d %H:%M:%S")
+        description = event.name
+
+        cursor.execute(
+            """
+            INSERT INTO meetings (start_time, end_time, description)
+            VALUES (%s, %s, %s)
+            """,
+            (start_time, end_time, description)
+        )
+    conn.commit()
+    conn.close()
+
+def import_export_calendar(root):
+    fereastra = tk.Toplevel(root)
+    fereastra.title("Import / Export Calendar")
+    fereastra.geometry("800x600")
+    fereastra.configure(bg="#fef5e7")
+
+    main_frame = tk.Frame(fereastra, bg="#fef5e7")
+    main_frame.pack(fill="both", expand=True)
+
+    frame_export = tk.Frame(main_frame, bg="#e8f6f3", padx=20, pady=20, 
+                            relief="groove", borderwidth=2)
+    frame_export.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+
+    frame_import = tk.Frame(main_frame, bg="#fcf3cf", padx=20, pady=20, 
+                            relief="groove", borderwidth=2)
+    frame_import.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+
+    main_frame.columnconfigure(0, weight=1)
+    main_frame.columnconfigure(1, weight=1)
+    main_frame.rowconfigure(0, weight=1)
+
+    tk.Label(frame_export, text="Export", 
+             font=("Bookman Old Style", 16, "bold"), 
+             bg="#e8f6f3").pack(pady=10)
+
+    tk.Label(frame_export, text="Numele persoanei:", 
+             bg="#e8f6f3").pack(anchor="w", pady=5)
+    entry_name = tk.Entry(frame_export, width=40)
+    entry_name.pack(pady=5)
+    tk.Button(frame_export, text="Export dupa persoana", bg="#d5f5e3",
+              command=lambda: export_calendar_nume(
+                  entry_name.get()
+                  )
+                ).pack(pady=10)
+
+    tk.Label(frame_export, text="Interval de date (YYYY-MM-DD):", 
+             bg="#e8f6f3").pack(anchor="w", pady=5)
+    entry_start_date = tk.Entry(frame_export, width=40)
+    entry_start_date.pack(pady=5)
+    entry_end_date = tk.Entry(frame_export, width=40)
+    entry_end_date.pack(pady=5)
+    tk.Button(frame_export, text="Export dupa interval", bg="#d5f5e3",
+              command=lambda: export_calendar_data(
+                  entry_start_date.get(), 
+                  entry_end_date.get()
+                  )
+                ).pack(pady=10)
+
+    tk.Label(frame_export, text="Toate sedintele:", 
+             bg="#e8f6f3").pack(anchor="w", pady=5)
+    tk.Button(frame_export, text="Export toate", bg="#d5f5e3", 
+              command=export_sedinte).pack(pady=10)
+
+    tk.Label(frame_import, text="Import", 
+             font=("Bookman Old Style", 16, "bold"), 
+             bg="#fcf3cf").pack(pady=10)
+    tk.Label(frame_import, text="Introduceti datele pentru import:", 
+             bg="#fcf3cf").pack(anchor="w", pady=5)
+    entry_import = tk.Entry(frame_import, width=40)
+    entry_import.pack(pady=10)
+    tk.Button(frame_import, 
+              text="Import", 
+              bg="#fdebd0",
+              command=lambda: import_calendar(entry_import.get())
+                  ).pack(pady=20)
+
+
 def main():
     print("Persoanele sunt:")
     afisare_participanti()
@@ -502,7 +668,8 @@ def logare(root):
     entry_email.pack(pady=5)
 
     button_logare_secundar = tk.Button(main_frame, text="Logare", width=20,
-                                       command=lambda:test_credentiale_logare(
+                                       command=lambda:test_credentiale_logare
+                                       (
                                         entry_prenume.get(),entry_nume.get(),
                                         entry_email.get()
                                         )
@@ -541,7 +708,10 @@ def inserare_informatii(root):
 
     button_import_export = tk.Button(main_frame,
                                     text="Import/Export calendar",
-                                    bg="#f6ddcc", width=20)
+                                    bg="#f6ddcc", 
+                                    width=20,
+                                    command=lambda:import_export_calendar(root)
+                                )
     button_import_export.pack(pady=10)
 
     button_vezi_sedinte = tk.Button(main_frame, 
@@ -549,7 +719,7 @@ def inserare_informatii(root):
                                     bg="#f6ddcc", 
                                     width=20,
                                     command=lambda: date_sedinte(root),
-                                    )
+                                )
     button_vezi_sedinte.pack(pady=10)
 
 def creeaza_interfata():

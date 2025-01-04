@@ -5,6 +5,12 @@ import tkinter.font as tkFont
 from ics import Calendar
 
 def conectare_baza_de_date():
+    """
+    Functia de conectare la baza de date
+    :return: conexiunea la baza de date
+    :rtype: psycopg2.connection
+
+    """
     try:
         conn = psycopg2.connect(
             host="localhost", 
@@ -17,6 +23,11 @@ def conectare_baza_de_date():
         print(f"eroare la conectarea bazei de date: {e}")
 
 def executare_sql_script(file_path):
+    """
+    Functia de executare a unui script SQL
+    :param file_path: calea catre fisierul SQL
+    :type file_path: str
+    """
     try:
         conn = conectare_baza_de_date()
         cursor = conn.cursor()
@@ -32,51 +43,16 @@ def executare_sql_script(file_path):
     except psycopg2.Error as e:
         print(f"eroare la executare: {e}")
 
-def adauga(root):
-    fereastra_adauga = tk.Toplevel(root)
-    fereastra_adauga.title("Fereastra de Adaugare Persoana")
-    fereastra_adauga.geometry("600x600")
-    fereastra_adauga.configure(bg="#fef5e7")
-    default_font = tkFont.Font(family="Bookman Old Style", size=12)
-    root.option_add("*Font", default_font)
-
-    main_frame = tk.Frame(fereastra_adauga, bg="#fef5e7")
-    main_frame.pack(expand=True, fill='both') 
-    main_frame.place(relx=0.5, rely=0.5, anchor='center')
-
-    label_adaugare = tk.Label(main_frame, text="Introduceti datele:", 
-                            font=("Bookman Old Style", 16), bg="#fef5e7")
-    label_adaugare.pack(pady=20)
-
-    label_prenume = tk.Label(main_frame, text="Prenume:", bg="#fef5e7",
-                             anchor='center', justify='center')
-    label_prenume.pack(pady=5)
-    entry_prenume = tk.Entry(main_frame, width=30, justify='center')
-    entry_prenume.pack(pady=5)
-
-    label_nume = tk.Label(main_frame, text="Nume:", bg="#fef5e7",
-                          anchor='center', justify='center')
-    label_nume.pack(pady=5)
-    entry_nume = tk.Entry(main_frame, width=30, justify='center')
-    entry_nume.pack(pady=5)
-
-    label_email = tk.Label(main_frame, text="Email:", bg="#fef5e7", 
-                           anchor='center', justify='center')
-    label_email.pack(pady=5)
-    entry_email = tk.Entry(main_frame, width=30, justify='center')
-    entry_email.pack(pady=5)
-
-    button_adaugare = tk.Button(main_frame, text="Adaugare", width=20,
-                                       command=lambda:adaugare_participant(
-                                           entry_prenume.get(),
-                                           entry_nume.get(),
-                                           entry_email.get()
-                                        )
-                                       )
-    button_adaugare.pack(pady=10)
-    button_adaugare.configure(bg="#f6ddcc")
-
 def adaugare_participant(nume, prenume, email):
+    """
+    Functia de adaugare a unui participant in baza de date
+    :param nume: numele participantului
+    :type nume: str
+    :param prenume: prenumele participantului
+    :type prenume: str
+    :param email: email-ul participantului
+    :type email: str
+    """
     try:
         conn = conectare_baza_de_date()
         cursor = conn.cursor()
@@ -98,12 +74,26 @@ def adaugare_participant(nume, prenume, email):
         print(f"eroare la adaugare: {e}")
 
 def afisare_participanti():
+    """
+    Functia de afisare a participantilor din baza de date
+    """
     conn=conectare_baza_de_date()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM people")
     print(cursor.fetchall())
 
 def adaugare_sedinta(data_inceput, data_sfarsit,descriere,lista_participanti):
+    """
+    Functia de adaugare a unei sedinte in baza de date
+    :param data_inceput: data si ora de inceput a sedintei
+    :type data_inceput: str
+    :param data_sfarsit: data si ora de sfarsit a sedintei
+    :type data_sfarsit: str
+    :param descriere: descrierea sedintei
+    :type descriere: str
+    :param lista_participanti: lista de participanti la sedinta
+    :type lista_participanti: str
+    """
     try:
         conn = conectare_baza_de_date()
         cursor = conn.cursor()
@@ -151,7 +141,294 @@ def adaugare_sedinta(data_inceput, data_sfarsit,descriere,lista_participanti):
     except psycopg2.Error as e:
         print(f"eroare la adaugare: {e}")
 
+
+def afisare_sedinte(prenume, nume, email):
+    """
+    Functia de afisare a sedintelor la care participa un anumit participant
+    :param prenume: prenumele participantului
+    :type prenume: str
+    :param nume: numele participantului
+    :type nume: str
+    :param email: email-ul participantului
+    :type email: str
+    :return: lista de sedinte la care participa participantul
+    :rtype: list
+    """
+    conn=conectare_baza_de_date()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT m.id, m.start_time, m.end_time, m.description
+        FROM meetings m
+        JOIN meeting_participants mp
+        ON m.id = mp.meeting_id
+        JOIN people p
+        ON p.id = mp.person_id
+        WHERE p.first_name = %s AND p.last_name = %s AND p.email = %s
+        """,
+        (prenume, nume, email)
+    )
+    return cursor.fetchall()
+
+def afisare_participanti_sedinta(sedinta_id):
+    """
+    Functia de afisare a participantilor unei sedinte
+    :param sedinta_id: id-ul sedintei
+    :type sedinta_id: int
+    :return: lista de participanti la sedinta
+    :rtype: list
+    """
+    conn=conectare_baza_de_date()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT p.first_name, p.last_name
+        FROM people p
+        JOIN meeting_participants mp
+        ON p.id = mp.person_id
+        WHERE mp.meeting_id = %s
+        """,
+        (sedinta_id,)
+    )
+    participanti = cursor.fetchall()
+    lista= []
+    for participant in participanti:
+        lista.append(f"{participant[0]} {participant[1]}")
+    return ", ".join(lista)
+
+def afisarea_sedintelor_timp(data_inceput, data_sfarsit):
+    """
+    Functia de afisare a sedintelor dintr-un interval de timp
+    :param data_inceput: data si ora de inceput a intervalului
+    :type data_inceput: str
+    :param data_sfarsit: data si ora de sfarsit a intervalului
+    :type data_sfarsit: str
+    """
+    conn=conectare_baza_de_date()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM meetings WHERE start_time >= %s AND end_time <= %s", 
+        (data_inceput, data_sfarsit)
+    )
+    print("Sedintele sunt:")
+    print(cursor.fetchall())
+
+def test_credentiale_logare(prenume, nume, email):
+    """
+    Functia de testare a credentialelor de logare
+    :param prenume: prenumele participantului
+    :type prenume: str
+    :param nume: numele participantului
+    :type nume: str
+    :param email: email-ul participantului
+    :type email: str
+    """
+    conn=conectare_baza_de_date()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT * FROM people
+        WHERE first_name = %s AND last_name = %s AND email = %s
+        """,
+        (prenume, nume, email)
+    )
+    rezultat = cursor.fetchall()
+    if len(rezultat) > 0:
+        participant_logat(prenume, nume, email)
+    return "Datele introduse nu sunt corecte!"
+
+def afisare_orar(data_inceput, data_sfarsit):
+    """
+    Functia de afisare a sedintelor dintr-un interval de timp
+    :param data_inceput: data si ora de inceput a intervalului
+    :type data_inceput: str
+    :param data_sfarsit: data si ora de sfarsit a intervalului
+    :type data_sfarsit: str
+    :return: lista de sedinte din intervalul de timp
+    :rtype: list
+    """
+    conn=conectare_baza_de_date()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM meetings WHERE start_time >= %s AND end_time <= %s", 
+        (data_inceput, data_sfarsit)
+    )
+    return cursor.fetchall()
+
+def export_calendar_nume(nume):
+    """
+    Functia de export a sedintelor unui participant in format .ics
+    :param nume: numele participantului
+    :type nume: str
+    """
+    prenume, nume = nume.split()
+    conn = conectare_baza_de_date()
+    cursor = conn.cursor()
+    cursor.execute(
+            """
+            SELECT m.start_time, m.end_time, m.description
+            FROM meetings m
+            JOIN meeting_participants mp ON m.id = mp.meeting_id
+            JOIN people p ON p.id = mp.person_id
+            WHERE p.first_name = %s AND p.last_name = %s
+            """,
+            (prenume, nume)
+        )
+    sedinte = cursor.fetchall()
+
+    filename = f"{prenume}_{nume}_calendar.ics"
+    with open(filename, "w") as f:
+        f.write("BEGIN:VCALENDAR\n")
+        f.write("PRODID:-//Meeting Scheduler//EN\n")
+        for sedinta in sedinte:
+                f.write("BEGIN:VEVENT\n")
+                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"SUMMARY:{sedinta[2]}\n")
+                f.write("END:VEVENT\n")
+        f.write("END:VCALENDAR\n")
+
+def export_calendar_data(start_date, end_date):
+    """
+    Functia de export a sedintelor dintr-un interval de timp in format .ics
+    :param start_date: data si ora de inceput a intervalului
+    :type start_date: str
+    :param end_date: data si ora de sfarsit a intervalului
+    :type end_date: str
+    """
+    conn = conectare_baza_de_date()
+    cursor = conn.cursor()
+    cursor.execute(
+            """
+            SELECT start_time, end_time, description
+            FROM meetings
+            WHERE start_time >= %s AND end_time <= %s
+            """,
+            (start_date, end_date)
+        )
+    sedinte = cursor.fetchall()
+
+    filename = f"calendar_data.ics"
+    with open(filename, "w") as f:
+            f.write("BEGIN:VCALENDAR\n")
+            f.write("PRODID:-//Meeting Scheduler//EN\n")
+            for sedinta in sedinte:
+                f.write("BEGIN:VEVENT\n")
+                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"SUMMARY:{sedinta[2]}\n")
+                f.write("END:VEVENT\n")
+            f.write("END:VCALENDAR\n")
+
+def export_sedinte():
+    """
+    Functia de export a tuturor sedintelor in format .ics
+    """
+    conn = conectare_baza_de_date()
+    cursor = conn.cursor()
+    cursor.execute(
+            """
+            SELECT start_time, end_time, description
+            FROM meetings
+            """
+        )
+    sedinte = cursor.fetchall()
+
+    filename = "sedinte.ics"
+    with open(filename, "w") as f:
+            f.write("BEGIN:VCALENDAR\n")
+            f.write("PRODID:-//Meeting Scheduler//EN\n")
+            for sedinta in sedinte:
+                f.write("BEGIN:VEVENT\n")
+                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
+                f.write(f"SUMMARY:{sedinta[2]}\n")
+                f.write("END:VEVENT\n")
+            f.write("END:VCALENDAR\n")
+
+def import_calendar(fisier):
+    """
+    Functia de import a sedintelor dintr-un fisier .ics
+    :param fisier: calea catre fisierul .ics
+    :type fisier: str
+    """
+    conn = conectare_baza_de_date()
+    cursor = conn.cursor()
+
+    with open(fisier, 'r') as f:
+        calendar = Calendar(f.read())
+
+    for event in calendar.events:
+        start_time = event.begin.datetime.strftime("%Y-%m-%d %H:%M:%S")
+        end_time = event.end.datetime.strftime("%Y-%m-%d %H:%M:%S")
+        description = event.name
+
+        cursor.execute(
+            """
+            INSERT INTO meetings (start_time, end_time, description)
+            VALUES (%s, %s, %s)
+            """,
+            (start_time, end_time, description)
+        )
+    conn.commit()
+    conn.close()
+
+def adauga(root):
+    """
+    Functia de adaugare a unui participant  
+    :param root: fereastra principala
+    :type root: tkinter.Tk
+    """
+    fereastra_adauga = tk.Toplevel(root)
+    fereastra_adauga.title("Fereastra de Adaugare Persoana")
+    fereastra_adauga.geometry("600x600")
+    fereastra_adauga.configure(bg="#fef5e7")
+    default_font = tkFont.Font(family="Bookman Old Style", size=12)
+    root.option_add("*Font", default_font)
+
+    main_frame = tk.Frame(fereastra_adauga, bg="#fef5e7")
+    main_frame.pack(expand=True, fill='both') 
+    main_frame.place(relx=0.5, rely=0.5, anchor='center')
+
+    label_adaugare = tk.Label(main_frame, text="Introduceti datele:", 
+                            font=("Bookman Old Style", 16), bg="#fef5e7")
+    label_adaugare.pack(pady=20)
+
+    label_prenume = tk.Label(main_frame, text="Prenume:", bg="#fef5e7",
+                             anchor='center', justify='center')
+    label_prenume.pack(pady=5)
+    entry_prenume = tk.Entry(main_frame, width=30, justify='center')
+    entry_prenume.pack(pady=5)
+
+    label_nume = tk.Label(main_frame, text="Nume:", bg="#fef5e7",
+                          anchor='center', justify='center')
+    label_nume.pack(pady=5)
+    entry_nume = tk.Entry(main_frame, width=30, justify='center')
+    entry_nume.pack(pady=5)
+
+    label_email = tk.Label(main_frame, text="Email:", bg="#fef5e7", 
+                           anchor='center', justify='center')
+    label_email.pack(pady=5)
+    entry_email = tk.Entry(main_frame, width=30, justify='center')
+    entry_email.pack(pady=5)
+
+    button_adaugare = tk.Button(main_frame, text="Adaugare", width=20,
+                                       command=lambda:adaugare_participant(
+                                           entry_prenume.get(),
+                                           entry_nume.get(),
+                                           entry_email.get()
+                                        )
+                                       )
+    button_adaugare.pack(pady=10)
+    button_adaugare.configure(bg="#f6ddcc")
+
+
 def inserare_sedinta(root):
+    """
+    Functia de inserare a unei sedinte
+    :param root: fereastra principala
+    :type root: tkinter.Tk
+    """
     fereastra_inserare = tk.Toplevel(root)
     fereastra_inserare.title("Fereastra de Adaugare Sedinta")
     fereastra_inserare.geometry("600x600")
@@ -218,68 +495,16 @@ def inserare_sedinta(root):
     button_adaugare.configure(bg="#f6ddcc")
 
 
-def afisare_sedinte(prenume, nume, email):
-    conn=conectare_baza_de_date()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT m.id, m.start_time, m.end_time, m.description
-        FROM meetings m
-        JOIN meeting_participants mp
-        ON m.id = mp.meeting_id
-        JOIN people p
-        ON p.id = mp.person_id
-        WHERE p.first_name = %s AND p.last_name = %s AND p.email = %s
-        """,
-        (prenume, nume, email)
-    )
-    return cursor.fetchall()
-
-def afisare_participanti_sedinta(sedinta_id):
-    conn=conectare_baza_de_date()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT p.first_name, p.last_name
-        FROM people p
-        JOIN meeting_participants mp
-        ON p.id = mp.person_id
-        WHERE mp.meeting_id = %s
-        """,
-        (sedinta_id,)
-    )
-    participanti = cursor.fetchall()
-    lista= []
-    for participant in participanti:
-        lista.append(f"{participant[0]} {participant[1]}")
-    return ", ".join(lista)
-
-def afisarea_sedintelor_timp(data_inceput, data_sfarsit):
-    conn=conectare_baza_de_date()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM meetings WHERE start_time >= %s AND end_time <= %s", 
-        (data_inceput, data_sfarsit)
-    )
-    print("Sedintele sunt:")
-    print(cursor.fetchall())
-
-def test_credentiale_logare(prenume, nume, email):
-    conn=conectare_baza_de_date()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT * FROM people
-        WHERE first_name = %s AND last_name = %s AND email = %s
-        """,
-        (prenume, nume, email)
-    )
-    rezultat = cursor.fetchall()
-    if len(rezultat) > 0:
-        participant_logat(prenume, nume, email)
-    return "Datele introduse nu sunt corecte!"
-
 def participant_logat(prenume, nume, email):
+    """
+    Functia de afisare a sedintelor unui participant
+    :param prenume: prenumele participantului
+    :type prenume: str
+    :param nume: numele participantului
+    :type nume: str
+    :param email: email-ul participantului
+    :type email: str
+    """
     fereastra = tk.Toplevel()
     fereastra.title(f"Meeting Scheduler - {prenume} {nume}")
     fereastra.geometry("600x600")
@@ -349,16 +574,15 @@ def participant_logat(prenume, nume, email):
     )
     button_inchide.pack(pady=20)
 
-def afisare_orar(data_inceput, data_sfarsit):
-    conn=conectare_baza_de_date()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM meetings WHERE start_time >= %s AND end_time <= %s", 
-        (data_inceput, data_sfarsit)
-    )
-    return cursor.fetchall()
 
 def afisare_sedinte_orar(data_inceput, data_sfarsit):
+    """
+    Functia de afisare a sedintelor dintr-un interval de timp
+    :param data_inceput: data si ora de inceput a intervalului
+    :type data_inceput: str
+    :param data_sfarsit: data si ora de sfarsit a intervalului
+    :type data_sfarsit: str
+    """
     fereastra = tk.Toplevel()
     fereastra.title(f"Meeting Scheduler - {data_inceput} - {data_sfarsit}")
     fereastra.geometry("850x600")
@@ -424,6 +648,11 @@ def afisare_sedinte_orar(data_inceput, data_sfarsit):
     button_inchide.pack(pady=20)
 
 def date_sedinte(root):
+    """
+    Functia de afisare a sedintelor dintr-un interval de timp
+    :param root: fereastra principala
+    :type root: tkinter.Tk
+    """
     fereastra_sedinte = tk.Toplevel(root)
     fereastra_sedinte.title("Date Sedinte")
     fereastra_sedinte.geometry("600x600")
@@ -462,109 +691,19 @@ def date_sedinte(root):
     button_sedinte.pack(pady=10)
     button_sedinte.configure(bg="#f6ddcc")
 
-def export_calendar_nume(nume):
-        prenume, nume = nume.split()
-        conn = conectare_baza_de_date()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT m.start_time, m.end_time, m.description
-            FROM meetings m
-            JOIN meeting_participants mp ON m.id = mp.meeting_id
-            JOIN people p ON p.id = mp.person_id
-            WHERE p.first_name = %s AND p.last_name = %s
-            """,
-            (prenume, nume)
-        )
-        sedinte = cursor.fetchall()
-
-        filename = f"{prenume}_{nume}_calendar.ics"
-        with open(filename, "w") as f:
-            f.write("BEGIN:VCALENDAR\n")
-            f.write("PRODID:-//Meeting Scheduler//EN\n")
-            for sedinta in sedinte:
-                f.write("BEGIN:VEVENT\n")
-                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
-                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
-                f.write(f"SUMMARY:{sedinta[2]}\n")
-                f.write("END:VEVENT\n")
-            f.write("END:VCALENDAR\n")
-
-def export_calendar_data(start_date, end_date):
-        conn = conectare_baza_de_date()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT start_time, end_time, description
-            FROM meetings
-            WHERE start_time >= %s AND end_time <= %s
-            """,
-            (start_date, end_date)
-        )
-        sedinte = cursor.fetchall()
-
-        filename = f"calendar_data.ics"
-        with open(filename, "w") as f:
-            f.write("BEGIN:VCALENDAR\n")
-            f.write("PRODID:-//Meeting Scheduler//EN\n")
-            for sedinta in sedinte:
-                f.write("BEGIN:VEVENT\n")
-                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
-                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
-                f.write(f"SUMMARY:{sedinta[2]}\n")
-                f.write("END:VEVENT\n")
-            f.write("END:VCALENDAR\n")
-
-def export_sedinte():
-        conn = conectare_baza_de_date()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT start_time, end_time, description
-            FROM meetings
-            """
-        )
-        sedinte = cursor.fetchall()
-
-        filename = "sedinte.ics"
-        with open(filename, "w") as f:
-            f.write("BEGIN:VCALENDAR\n")
-            f.write("PRODID:-//Meeting Scheduler//EN\n")
-            for sedinta in sedinte:
-                f.write("BEGIN:VEVENT\n")
-                f.write(f"DTSTART:{sedinta[0].strftime('%Y%m%dT%H%M%S')}\n")
-                f.write(f"DTEND:{sedinta[1].strftime('%Y%m%dT%H%M%S')}\n")
-                f.write(f"SUMMARY:{sedinta[2]}\n")
-                f.write("END:VEVENT\n")
-            f.write("END:VCALENDAR\n")
-
-def import_calendar(fisier):
-    conn = conectare_baza_de_date()
-    cursor = conn.cursor()
-
-    with open(fisier, 'r') as f:
-        calendar = Calendar(f.read())
-
-    for event in calendar.events:
-        start_time = event.begin.datetime.strftime("%Y-%m-%d %H:%M:%S")
-        end_time = event.end.datetime.strftime("%Y-%m-%d %H:%M:%S")
-        description = event.name
-
-        cursor.execute(
-            """
-            INSERT INTO meetings (start_time, end_time, description)
-            VALUES (%s, %s, %s)
-            """,
-            (start_time, end_time, description)
-        )
-    conn.commit()
-    conn.close()
 
 def import_export_calendar(root):
+    """
+    Functia de import si export a sedintelor
+    :param root: fereastra principala
+    :type root: tkinter.Tk
+    """
     fereastra = tk.Toplevel(root)
     fereastra.title("Import / Export Calendar")
     fereastra.geometry("800x600")
     fereastra.configure(bg="#fef5e7")
+    default_font = tkFont.Font(family="Bookman Old Style", size=12)
+    root.option_add("*Font", default_font)
 
     main_frame = tk.Frame(fereastra, bg="#fef5e7")
     main_frame.pack(fill="both", expand=True)
@@ -627,13 +766,12 @@ def import_export_calendar(root):
                   ).pack(pady=20)
 
 
-def main():
-    print("Persoanele sunt:")
-    afisare_participanti()
-    afisare_sedinte()
-    afisare_participanti_sedinta(2)
-
 def logare(root):
+    """
+    Functia de logare a unui participant
+    :param root: fereastra principala
+    :type root: tkinter.Tk
+    """
     fereastra_logare = tk.Toplevel(root)
     fereastra_logare.title("Fereastra de Logare")
     fereastra_logare.geometry("600x600")
@@ -679,6 +817,11 @@ def logare(root):
 
 
 def inserare_informatii(root):
+    """
+    Functia de inserare a informatiilor
+    :param root: fereastra principala
+    :type root: tkinter.Tk
+    """
     fereastra_inserare = tk.Toplevel(root)
     fereastra_inserare.title("Inserare Informatii")
     fereastra_inserare.geometry("600x600")
@@ -723,6 +866,9 @@ def inserare_informatii(root):
     button_vezi_sedinte.pack(pady=10)
 
 def creeaza_interfata():
+    """
+    Functia de creare a interfetei grafice
+    """
     root = tk.Tk()
     root.title("Meeting Scheduler")
     root.geometry("600x600") 

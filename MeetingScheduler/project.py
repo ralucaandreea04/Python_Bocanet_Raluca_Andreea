@@ -22,36 +22,15 @@ def conectare_baza_de_date():
     except psycopg2.Error as e:
         print(f"eroare la conectarea bazei de date: {e}")
 
-def executare_sql_script(file_path):
-    """
-    Functia de executare a unui script SQL
-    :param file_path: calea catre fisierul SQL
-    :type file_path: str
-    """
-    try:
-        conn = conectare_baza_de_date()
-        cursor = conn.cursor()
-
-        with open(file_path, 'r') as sql_file:
-            sql_script = sql_file.read()
-
-        cursor.execute(sql_script)
-        conn.commit()
-
-        print(f"s-a executat cu succes scriptul '{file_path}'")
-
-    except psycopg2.Error as e:
-        print(f"eroare la executare: {e}")
-
 def adaugare_participant(nume, prenume, email):
     """
     Functia de adaugare a unui participant in baza de date
     :param nume: numele participantului
-    :type nume: str
+    :type nume: string
     :param prenume: prenumele participantului
-    :type prenume: str
+    :type prenume: string
     :param email: email-ul participantului
-    :type email: str
+    :type email: string
     """
     try:
         conn = conectare_baza_de_date()
@@ -86,13 +65,13 @@ def adaugare_sedinta(data_inceput, data_sfarsit,descriere,lista_participanti):
     """
     Functia de adaugare a unei sedinte in baza de date
     :param data_inceput: data si ora de inceput a sedintei
-    :type data_inceput: str
+    :type data_inceput: string
     :param data_sfarsit: data si ora de sfarsit a sedintei
-    :type data_sfarsit: str
+    :type data_sfarsit: string
     :param descriere: descrierea sedintei
-    :type descriere: str
+    :type descriere: string
     :param lista_participanti: lista de participanti la sedinta
-    :type lista_participanti: str
+    :type lista_participanti: string
     """
     try:
         conn = conectare_baza_de_date()
@@ -146,11 +125,11 @@ def afisare_sedinte(prenume, nume, email):
     """
     Functia de afisare a sedintelor la care participa un anumit participant
     :param prenume: prenumele participantului
-    :type prenume: str
+    :type prenume: string
     :param nume: numele participantului
-    :type nume: str
+    :type nume: string
     :param email: email-ul participantului
-    :type email: str
+    :type email: string
     :return: lista de sedinte la care participa participantul
     :rtype: list
     """
@@ -200,9 +179,9 @@ def afisarea_sedintelor_timp(data_inceput, data_sfarsit):
     """
     Functia de afisare a sedintelor dintr-un interval de timp
     :param data_inceput: data si ora de inceput a intervalului
-    :type data_inceput: str
+    :type data_inceput: string
     :param data_sfarsit: data si ora de sfarsit a intervalului
-    :type data_sfarsit: str
+    :type data_sfarsit: string
     """
     conn=conectare_baza_de_date()
     cursor = conn.cursor()
@@ -217,11 +196,11 @@ def test_credentiale_logare(prenume, nume, email):
     """
     Functia de testare a credentialelor de logare
     :param prenume: prenumele participantului
-    :type prenume: str
+    :type prenume: string
     :param nume: numele participantului
-    :type nume: str
+    :type nume: string
     :param email: email-ul participantului
-    :type email: str
+    :type email: string
     """
     conn=conectare_baza_de_date()
     cursor = conn.cursor()
@@ -241,9 +220,9 @@ def afisare_orar(data_inceput, data_sfarsit):
     """
     Functia de afisare a sedintelor dintr-un interval de timp
     :param data_inceput: data si ora de inceput a intervalului
-    :type data_inceput: str
+    :type data_inceput: string
     :param data_sfarsit: data si ora de sfarsit a intervalului
-    :type data_sfarsit: str
+    :type data_sfarsit: string
     :return: lista de sedinte din intervalul de timp
     :rtype: list
     """
@@ -259,7 +238,7 @@ def export_calendar_nume(nume):
     """
     Functia de export a sedintelor unui participant in format .ics
     :param nume: numele participantului
-    :type nume: str
+    :type nume: string
     """
     prenume, nume = nume.split()
     conn = conectare_baza_de_date()
@@ -356,12 +335,12 @@ def import_calendar(fisier):
     cursor = conn.cursor()
 
     with open(fisier, 'r') as f:
-        calendar = Calendar(f.read())
+        calendar = Calendar(f.read()) 
 
-    for event in calendar.events:
-        start_time = event.begin.datetime.strftime("%Y-%m-%d %H:%M:%S")
-        end_time = event.end.datetime.strftime("%Y-%m-%d %H:%M:%S")
-        description = event.name
+    for eveniment in calendar.events:
+        start_time = eveniment.begin.datetime.strftime("%Y-%m-%d %H:%M:%S")
+        end_time = eveniment.end.datetime.strftime("%Y-%m-%d %H:%M:%S")
+        description = eveniment.name
 
         cursor.execute(
             """
@@ -375,7 +354,8 @@ def import_calendar(fisier):
 
 def adauga(root):
     """
-    Functia de adaugare a unui participant  
+    Functia de adaugare a unui participant si interfata grafica ce contine 
+    campurile prenume, nume si email
     :param root: fereastra principala
     :type root: tkinter.Tk
     """
@@ -425,7 +405,9 @@ def adauga(root):
 
 def inserare_sedinta(root):
     """
-    Functia de inserare a unei sedinte
+    Functia de inserare a unei sedinte si interfata grafica ce contine
+    campurile descriere, data si ora de inceput, data si ora de sfarsit si
+    lista de participanti
     :param root: fereastra principala
     :type root: tkinter.Tk
     """
@@ -497,7 +479,8 @@ def inserare_sedinta(root):
 
 def participant_logat(prenume, nume, email):
     """
-    Functia de afisare a sedintelor unui participant
+    Functia de afisare a sedintelor unui participant si interfata grafica
+    ce contine tabelul cu sedinte al unui participant
     :param prenume: prenumele participantului
     :type prenume: str
     :param nume: numele participantului
@@ -577,11 +560,13 @@ def participant_logat(prenume, nume, email):
 
 def afisare_sedinte_orar(data_inceput, data_sfarsit):
     """
-    Functia de afisare a sedintelor dintr-un interval de timp
+    Functia de afisare a sedintelor dintr-un interval de timp si interfata
+    grafica ce contine tabelul cu sedinte din intervalul de timp dat de 
+    functia date_sedinte
     :param data_inceput: data si ora de inceput a intervalului
-    :type data_inceput: str
+    :type data_inceput: string
     :param data_sfarsit: data si ora de sfarsit a intervalului
-    :type data_sfarsit: str
+    :type data_sfarsit: string
     """
     fereastra = tk.Toplevel()
     fereastra.title(f"Meeting Scheduler - {data_inceput} - {data_sfarsit}")
@@ -649,7 +634,8 @@ def afisare_sedinte_orar(data_inceput, data_sfarsit):
 
 def date_sedinte(root):
     """
-    Functia de afisare a sedintelor dintr-un interval de timp
+    Functia de afisare a sedintelor dintr-un interval de timp si interfata
+    grafica ce contine campurile data de inceput si data de sfarsit
     :param root: fereastra principala
     :type root: tkinter.Tk
     """
@@ -768,7 +754,8 @@ def import_export_calendar(root):
 
 def logare(root):
     """
-    Functia de logare a unui participant
+    Functia de logare a unui participant si interfata grafica ce contine
+    campurile prenume, nume si email
     :param root: fereastra principala
     :type root: tkinter.Tk
     """
@@ -818,7 +805,9 @@ def logare(root):
 
 def inserare_informatii(root):
     """
-    Functia de inserare a informatiilor
+    Functia de inserare a informatiilor si interfata grafica ce contine
+    butoanele pentru adaugare persoana, stabilire sedinta, import/export
+    calendar si vizualizare sedinte
     :param root: fereastra principala
     :type root: tkinter.Tk
     """
@@ -867,7 +856,8 @@ def inserare_informatii(root):
 
 def creeaza_interfata():
     """
-    Functia de creare a interfetei grafice
+    Functia de creare a interfetei grafice ce contine butoanele pentru logare
+    si inserare informatii
     """
     root = tk.Tk()
     root.title("Meeting Scheduler")
